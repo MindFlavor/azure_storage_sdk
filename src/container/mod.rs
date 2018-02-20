@@ -58,24 +58,16 @@ impl Container {
     }
 
     pub fn parse(elem: &Element) -> Result<Container, AzureError> {
-        let name = try!(cast_must::<String>(elem, &["Name"]));
-        let last_modified = try!(cast_must::<DateTime<Utc>>(
-            elem,
-            &["Properties", "Last-Modified"]
-        ));
-        let e_tag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
+        let name = cast_must::<String>(elem, &["Name"])?;
+        let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
+        let e_tag = cast_must::<String>(elem, &["Properties", "Etag"])?;
 
-        let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
+        let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
 
-        let lease_duration = try!(cast_optional::<LeaseDuration>(
-            elem,
-            &["Properties", "LeaseDuration"]
-        ));
+        let lease_duration =
+            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
 
-        let lease_status = try!(cast_must::<LeaseStatus>(
-            elem,
-            &["Properties", "LeaseStatus"]
-        ));
+        let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
 
         Ok(Container {
             name: name,

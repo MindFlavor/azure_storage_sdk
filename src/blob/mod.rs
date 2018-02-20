@@ -108,71 +108,39 @@ pub struct Blob {
 
 impl Blob {
     pub fn parse(elem: &Element, container_name: &str) -> Result<Blob, AzureError> {
-        let name = try!(cast_must::<String>(elem, &["Name"]));
-        let snapshot_time = try!(cast_optional::<DateTime<Utc>>(elem, &["Snapshot"]));
-        let last_modified = try!(cast_must::<DateTime<Utc>>(
-            elem,
-            &["Properties", "Last-Modified"]
-        ));
-        let etag = try!(cast_must::<String>(elem, &["Properties", "Etag"]));
+        let name = cast_must::<String>(elem, &["Name"])?;
+        let snapshot_time = cast_optional::<DateTime<Utc>>(elem, &["Snapshot"])?;
+        let last_modified = cast_must::<DateTime<Utc>>(elem, &["Properties", "Last-Modified"])?;
+        let etag = cast_must::<String>(elem, &["Properties", "Etag"])?;
 
-        let content_length = try!(cast_must::<u64>(elem, &["Properties", "Content-Length"]));
+        let content_length = cast_must::<u64>(elem, &["Properties", "Content-Length"])?;
 
-        let content_type = try!(cast_must::<String>(elem, &["Properties", "Content-Type"]));
-        let content_encoding = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "Content-Encoding"]
-        ));
-        let content_language = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "Content-Language"]
-        ));
-        let content_md5 = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "Content-MD5"]
-        ));
-        let cache_control = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "Cache-Control"]
-        ));
-        let x_ms_blob_sequence_number = try!(cast_optional::<u64>(
-            elem,
-            &["Properties", "x-ms-blob-sequence-number"]
-        ));
+        let content_type = cast_must::<String>(elem, &["Properties", "Content-Type"])?;
+        let content_encoding = cast_optional::<String>(elem, &["Properties", "Content-Encoding"])?;
+        let content_language = cast_optional::<String>(elem, &["Properties", "Content-Language"])?;
+        let content_md5 = cast_optional::<String>(elem, &["Properties", "Content-MD5"])?;
+        let cache_control = cast_optional::<String>(elem, &["Properties", "Cache-Control"])?;
+        let x_ms_blob_sequence_number =
+            cast_optional::<u64>(elem, &["Properties", "x-ms-blob-sequence-number"])?;
 
-        let blob_type = try!(cast_must::<BlobType>(elem, &["Properties", "BlobType"]));
+        let blob_type = cast_must::<BlobType>(elem, &["Properties", "BlobType"])?;
 
-        let lease_status = try!(cast_must::<LeaseStatus>(
-            elem,
-            &["Properties", "LeaseStatus"]
-        ));
-        let lease_state = try!(cast_must::<LeaseState>(elem, &["Properties", "LeaseState"]));
-        let lease_duration = try!(cast_optional::<LeaseDuration>(
-            elem,
-            &["Properties", "LeaseDuration"]
-        ));
-        let copy_id = try!(cast_optional::<String>(elem, &["Properties", "CopyId"]));
-        let copy_status = try!(cast_optional::<CopyStatus>(
-            elem,
-            &["Properties", "CopyStatus"]
-        ));
-        let copy_source = try!(cast_optional::<String>(elem, &["Properties", "CopySource"]));
-        let copy_progress = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "CopyProgress"]
-        ));
-        let copy_completion = try!(cast_optional::<DateTime<Utc>>(
-            elem,
-            &["Properties", "CopyCompletionTime"]
-        ));
-        let copy_status_description = try!(cast_optional::<String>(
-            elem,
-            &["Properties", "CopyStatusDescription"]
-        ));
+        let lease_status = cast_must::<LeaseStatus>(elem, &["Properties", "LeaseStatus"])?;
+        let lease_state = cast_must::<LeaseState>(elem, &["Properties", "LeaseState"])?;
+        let lease_duration =
+            cast_optional::<LeaseDuration>(elem, &["Properties", "LeaseDuration"])?;
+        let copy_id = cast_optional::<String>(elem, &["Properties", "CopyId"])?;
+        let copy_status = cast_optional::<CopyStatus>(elem, &["Properties", "CopyStatus"])?;
+        let copy_source = cast_optional::<String>(elem, &["Properties", "CopySource"])?;
+        let copy_progress = cast_optional::<String>(elem, &["Properties", "CopyProgress"])?;
+        let copy_completion =
+            cast_optional::<DateTime<Utc>>(elem, &["Properties", "CopyCompletionTime"])?;
+        let copy_status_description =
+            cast_optional::<String>(elem, &["Properties", "CopyStatusDescription"])?;
 
         let mut cp_bytes: Option<Range> = None;
         if let Some(txt) = copy_progress {
-            cp_bytes = Some(try!(txt.parse::<Range>()));
+            cp_bytes = Some(txt.parse::<Range>()?);
         }
 
         let ctype = {
@@ -233,7 +201,7 @@ impl Blob {
 
         let last_modified = match h.get::<LastModified>() {
             Some(lm) => {
-                try!(from_azure_time(&lm.to_string()))
+                from_azure_time(&lm.to_string())?
                 //{let te: TraversingError= e.into(); te}))
             }
             None => return Err(AzureError::HeaderNotFound("Last-Modified".to_owned())),
@@ -256,7 +224,7 @@ impl Blob {
         );
 
         let blob_type = match h.get::<XMSBlobType>() {
-            Some(lm) => try!((&lm.to_string()).parse::<BlobType>()),
+            Some(lm) => (&lm.to_string()).parse::<BlobType>()?,
             None => return Err(AzureError::HeaderNotFound("x-ms-blob-type".to_owned())),
         };
         trace!("blob_type == {:?}", blob_type);
@@ -292,13 +260,13 @@ impl Blob {
         //);
 
         let lease_status = match h.get::<XMSLeaseStatus>() {
-            Some(ls) => try!(ls.to_string().parse::<LeaseStatus>()),
+            Some(ls) => ls.to_string().parse::<LeaseStatus>()?,
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-status".to_owned())),
         };
         trace!("lease_status == {:?}", lease_status);
 
         let lease_state = match h.get::<XMSLeaseState>() {
-            Some(ls) => try!(ls.to_string().parse::<LeaseState>()),
+            Some(ls) => ls.to_string().parse::<LeaseState>()?,
             None => return Err(AzureError::HeaderNotFound("x-ms-lease-state".to_owned())),
         };
         trace!("lease_state == {:?}", lease_state);
